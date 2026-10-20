@@ -259,6 +259,7 @@ def structured(org_id, schema, task, data, strong=False, output_tokens=2200):
             },
         },
         "max_completion_tokens": output_tokens,
+        "reasoning_effort": "low",
     }
     estimate = input_tokens(payload)
     if estimate > MAX_INPUT_TOKENS:
