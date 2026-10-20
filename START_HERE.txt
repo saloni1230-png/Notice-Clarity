@@ -1,0 +1,87 @@
+NOTICE CLARITY 1.0.1 — COMPLETE SOURCE REPOSITORY
+
+One archive, modular code. No Markdown files are part of the deliverable.
+
+QUICK LOCAL START
+1. Install/start Docker Engine or Docker Desktop with Linux containers.
+2. Windows: powershell -ExecutionPolicy Bypass -File .\start.ps1
+   Linux/macOS: sh start.sh
+3. Open http://localhost:65030
+4. Register a real-looking email and a password of at least 12 characters.
+5. Local development skips email verification. Sign in and start uploading.
+   Mailpit at http://localhost:8025 is available for optional email-flow testing.
+6. Upload a PDF/PNG/JPEG, or download the clearly marked synthetic example in the UI.
+7. Scanner must finish downloading signatures before uploads work:
+   docker compose logs -f clamav
+
+The default development profile uses private local Docker volumes, PostgreSQL,
+five independent durable worker pools, Mailpit and ClamAV. AI is disabled until
+configured. It then shows exact document excerpts and review requirements rather
+than presenting deterministic extraction as full document understanding.
+
+ENABLE STRUCTURED AI
+Edit the untracked .env:
+  NS_AI_API_KEY=your-provider-key
+  NS_AI_MODEL=your-tested-structured-output-capable-model
+  NS_AI_STRONG_MODEL=your-tested-stronger-model (optional)
+  NS_AI_PRICE_INPUT_PER_MILLION=maximum actual input USD/million across enabled models
+  NS_AI_PRICE_OUTPUT_PER_MILLION=maximum actual output USD/million across enabled models
+The prices are not defaults or promises; obtain them from your provider. Budget
+reservations are deliberately conservative and are not refunded on timeout.
+NS_EMBEDDING_MODEL enables hybrid BM25 + embedding retrieval. Without embeddings,
+search explicitly runs lexical-only. Optional cross-encoder reranking requires
+installing .[rerank], provisioning model weights and setting NS_RERANKER_MODEL.
+Do not enable unprovisioned optional features. No live key is included.
+
+Restart configured services: docker compose up -d
+Privacy/provider retention and model quality must be assessed before real notices.
+
+KNOWLEDGE SOURCES
+The starter manifest is a portal/procedure discovery list, NOT a legal corpus.
+  docker compose exec api notice-admin sources-fetch
+  docker compose exec api notice-admin sources-status
+  docker compose exec api notice-admin source-show SOURCE_ID
+Have a qualified reviewer inspect the complete exact snapshot and effective dates.
+  docker compose exec api notice-admin source-approve SOURCE_ID --reviewer "Reviewer identity" --days 14
+Where applicable add --valid-from YYYY-MM-DD and --valid-to YYYY-MM-DD.
+Unapproved, stale and superseded sources cannot support AI legal-source claims.
+This does not establish legal applicability; professional review is still needed.
+No statutes or legal deadlines are silently seeded from model memory.
+
+LOCAL PYTHON DEVELOPMENT (alternative to Docker)
+Python 3.12+, PostgreSQL 17, Tesseract 5 with eng language data required.
+  python -m venv .venv
+  .venv\Scripts\python -m pip install -r requirements.lock -r requirements-dev.lock
+  .venv\Scripts\python -m pip install --no-deps -e .
+Set NS_DATABASE_URL to your PostgreSQL URL, NS_LOCAL_STORAGE to a private folder,
+NS_SMTP_HOST/PORT to a reachable SMTP service and NS_SCANNER_HOST to ClamAV.
+  alembic upgrade head
+  python scripts/dev.py
+The dev launcher runs API and independent worker processes and stops its children
+when terminated. For production use managed containers, not this launcher.
+
+TEST
+Only use an isolated PostgreSQL database named notice_test; tests TRUNCATE its tables.
+  set NS_DATABASE_URL=postgresql+psycopg://notice:notice@localhost:5432/notice_test
+  alembic upgrade head
+  python -m pytest
+  python scripts/evaluate.py
+  npm ci
+  npx playwright install chromium
+Set NS_REQUIRE_EMAIL_VERIFICATION=false and NS_SCANNER_HOST= for synthetic E2E
+development ONLY. Set PYTHON_BIN to the venv Python executable if necessary.
+  npx playwright test
+Tests for real OCR are marked/skipped if eng Tesseract is not installed.
+
+FILES THAT MATTER
+notice/             API, authorization, evidence, OCR, retrieval, AI, jobs, UI
+migrations/         Explicit Alembic database migrations
+tests/              PostgreSQL integration, security, AI-contract, browser, load tests
+evals/              Synthetic regression fixtures (not a domain validation dataset)
+ops/                Production compose, TLS proxy and alert rules
+operations.txt      Deployment, restore, retention and failure runbooks
+verification.json   Implemented / tested / externally configured / pending validation
+requirements*.lock Exact runtime and dev dependencies for reproducible installs
+
+Do not use development credentials, Mailpit, trust-auth test PostgreSQL or local
+storage for public deployment. Read operations.txt and verification.json first.

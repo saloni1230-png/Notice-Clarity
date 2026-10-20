@@ -1,0 +1,17 @@
+Notice Clarity source imports third-party packages; dependency code is installed
+from package registries and is not embedded in this repository archive.
+
+Runtime dependency versions and artifact hashes are in requirements.lock.
+Browser development dependency versions are in package-lock.json.
+Preserve each installed package's copyright and license notices when distributing
+an image or a packaged binary. This file does not override dependency licenses.
+
+PyMuPDF / MuPDF have AGPL and commercial licensing options. Review the exact
+installed version's terms and obtain an appropriate license before proprietary
+distribution. Dependency license and security review is a release responsibility.
+Tesseract, its language data, ClamAV, PostgreSQL, Docker base images, Caddy and
+optional reranker/embedding model weights have their own distribution terms.
+
+Official portal content remains attributable to the respective authority. Source
+ingestion records the URL, raw-content digest and fetch timestamp. A snapshot's
+approval is an operator review, not government endorsement of Notice Clarity.

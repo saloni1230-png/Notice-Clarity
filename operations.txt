@@ -1,0 +1,155 @@
+NOTICE CLARITY — OPERATIONS AND SECURITY BOUNDARIES
+
+DEPLOYMENT
+Build/test in CI; pin production images by digest after vulnerability scanning:
+  docker build -t REGISTRY/notice-clarity:RELEASE .
+Push using your CI workload identity. Configure NOTICE_IMAGE=registry/image@sha256:...
+and NOTICE_HOST=your.domain in the operator shell, then create .env.production
+outside source control using your secret manager. The production template expects
+managed PostgreSQL, private S3/KMS and SMTP/ClamAV reachable from the containers.
+  docker compose -f ops/compose.production.yaml config --quiet
+  docker compose -f ops/compose.production.yaml up -d
+Use a separate migration DB role; runtime role must not own schema or alter tables.
+Apply migrations as a release job before swapping API/worker images. Run readiness
+through the configured host. For multiple hosts use a managed container scheduler;
+the worker queue has no host-local thread dependency.
+
+Required production environment:
+NS_DATABASE_URL=postgresql+psycopg://runtime:...@db-host/notice?sslmode=verify-full&sslrootcert=...
+NS_SECRET=random 64+ characters from a managed secret store
+NS_PUBLIC_URL=https://your.domain
+NS_S3_BUCKET=private bucket; NS_S3_KMS_KEY=KMS key ARN; NS_S3_REGION=chosen region
+NS_SMTP_HOST, NS_SMTP_PORT=587, NS_SMTP_TLS=true, NS_SMTP_USERNAME, NS_SMTP_PASSWORD
+NS_MAIL_FROM=verified sender
+NS_SCANNER_HOST=private scanner address
+NS_METRICS_TOKEN=random 32+ characters
+NS_REQUIRE_EMAIL_VERIFICATION=true
+Template forces NS_ENVIRONMENT=production, NS_STORAGE=s3 and NS_SECURE_COOKIES=true.
+Startup refuses missing core controls. Production readiness does not probe all
+external services: independently smoke-test scanner, mail, S3/KMS and AI contracts.
+App configuration supports environment injection; use platform secret-store bindings.
+Rotating NS_SECRET logs out sessions, invalidates tokens and encrypted outbox jobs;
+drain mail first, then rotate and ask users to request new account links.
+
+S3 / IAM
+Block ALL public access; bucket owner enforced; TLS-only bucket policy; SSE-KMS
+default encryption; restrict app role to its bucket prefix with GetObject,
+PutObject, DeleteObject and KMS permissions. Do not expose object URLs publicly.
+Browser sees bounded PNG renders behind authorization, not active original PDFs.
+If bucket versioning is enabled, delete markers do not erase historical versions.
+Configure noncurrent-version expiry to the documented retention policy and test it.
+S3 inventory reconciliation: join object prefixes against documents.object_key;
+only purge unknown prefixes older than 24h after ruling out in-flight uploads.
+Local profile: notice-admin storage-orphans lists aged unknown originals; --delete
+removes them. Image cache keys are under the same document key and deletion batch.
+
+NETWORK / PROCESS ISOLATION
+Run OCR/extract containers with CPU/memory limits and read-only root filesystems.
+S3, mail, scanner, DB and the selected AI provider are the only required egress.
+Source ingestion is an explicit administration command restricted to an exact
+official hostname allowlist, HTTPS, global DNS addresses, no redirects, 5MB limit.
+Enforce outbound firewall/DNS controls too; application DNS validation alone cannot
+eliminate every rebinding/proxy risk. Never fetch URLs from uploaded notices.
+No document-derived shell command is executed. Tesseract has a 110-second timeout.
+Configure proxy connection/header/body timeouts, ingress per-IP abuse protection,
+DDoS controls, tenant quotas, and a private metrics endpoint. Forwarded request
+headers are ignored by default. If enabling proxy headers, trust only the proxy.
+
+DATA MODEL / AUTHORIZATION
+All case routes resolve membership and tenant scope before loading content.
+Every workspace member can see every active case in that organization. There is
+no claim of per-case private sharing. Revoking membership removes access on the
+next request. Owner manages membership; admin deletes cases; reviewer records a
+review. Owners cannot directly resolve reviews; a role assignment is an institution
+attestation, NOT a built-in verification of a person's legal qualification.
+Passwords use Argon2id. Browser session cookies are HttpOnly, SameSite=Strict,
+Secure in production; session IDs and account tokens are HMAC digests in DB.
+Origin + CSRF checks protect authenticated mutations. Outbox bodies are AES-GCM
+encrypted; delivered mail payloads are erased. No public password-reset tokens.
+Audit stores actor/target identifiers and events; no document text in access logs.
+Do not grant runtime UPDATE/DELETE on audit_events except maintenance retention.
+For tamper-evident or regulated auditing, stream audit events to an immutable log;
+the application DB audit table itself is not tamper-proof against a DB owner.
+
+DURABLE QUEUES / RECOVERY
+PostgreSQL SKIP LOCKED claims one eligible job; leases have periodic heartbeats.
+Result writes check an owner token under row lock to fence stale workers. Page
+stages are separately committed. OCR, AI, extraction, email and maintenance are
+independent process pools. Unique job keys deduplicate stage submission.
+  notice-admin queue-status
+Job failures retry four attempts with delayed exponential backoff, then dead-letter.
+Error storage contains exception class only. Investigate provider/worker telemetry
+without logging document contents. After fixing cause:
+  notice-admin redrive JOB_ID
+Mail payloads are cleared on exhausted retries; request a fresh account link.
+Document upload success is atomic in DB with job enqueue. Object upload happens
+first; a DB rollback may leave an orphan, handled by storage inventory/runbook.
+Abrupt termination during a paid model request can incur a duplicate charge after
+reclaim; conservative reservations and provider spend caps bound the exposure.
+Exactly-once delivery to external SMTP/AI is not claimed. Mail may be sent twice
+if a worker crashes after delivery before acknowledgement; tokens remain single-use.
+
+PRIVACY / RETENTION
+Default case retention is 90 days; configure NS_DOCUMENT_DAYS for your policy.
+Case deletion revokes access immediately. Maintenance hard-deletes expired/deleted
+case context, actions, Q&A, reviews and, after the last live case reference, pages,
+original object and page image cache. Worker must run; alert on stalled queue.
+Maintenance runs hourly and in 200-case batches. Large backlogs require repeated
+manual cleanup or scaling. Audit expires after 365 days; completed jobs after 7 days.
+Document cost records contain no text. Source snapshots are public-source material.
+Account/user records are separate from case deletion; implement support identity
+verification and your legal account-erasure process before public launch.
+Backups: encryption, access controls and expiry must match the published policy.
+Restoring a backup can resurrect deleted records. Keep a separately protected
+erasure ledger and replay deletions before accepting traffic after restore.
+This release does not automate cross-backup erasure or claim regulatory certification.
+Publish operator privacy contact, provider terms, data region and breach procedure.
+
+LEGAL KNOWLEDGE
+Initial URLs are official procedure portals. No complete or lawyer-approved legal
+corpus is bundled. Fetch sources, inspect snapshots and approve them with a named
+qualified reviewer and effective interval. Changed content revokes prior approval;
+refresh approval expires within 30 days. Fetch failure does not extend freshness.
+Run sources-fetch on your controlled schedule, alert on failure and source expiry.
+Document date and received date are different fields. Ambiguous dates remain quotes;
+the product never computes legal limitation periods or automatically files replies.
+Evidence quote matching is followed by independent AI support verification for Q&A.
+Detected legal interpretations, conflicts or unverifiable claims are withheld in
+favor of excerpts and review. This is a risk gate, not proof that models are correct.
+Use a representative, consented, redacted evaluation set reviewed by Indian domain
+professionals for Income Tax, GST, banking and court notices before launch.
+
+OBSERVABILITY / EFFICIENCY
+/health/live is process liveness; /health/ready checks DB migration table.
+/metrics requires Authorization: Bearer NS_METRICS_TOKEN. Use one scrape per API
+process; aggregate counters/histograms in Prometheus. Queue counts are DB snapshots.
+Workers emit job ID, pool, duration and outcome JSON without notice text.
+Digital extraction runs before OCR. Page content, facts and optional embeddings
+are cached by tenant/document SHA-256 and pipeline version; duplicate uploads reuse
+the document. Page PNG rendering is cached privately. No cross-tenant cache sharing.
+AI requests reserve conservative UTF-8-byte token upper bounds, explicit output
+limits, daily per-org USD/token budgets and per-org concurrency before network calls.
+Model timeout/no-valid-schema/no-evidence returns excerpts; no hidden retries within
+provider calls. Strong model is used for ambiguous extraction and support checks.
+Embedding storage is page-level JSON; bounded <=80-page case retrieval computes
+cosine on authorized pages. This is intentionally scoped per case, not a global
+million-document vector index. Cross-encoder reranking is optional and provisioned
+separately. Bump NS_PIPELINE_VERSION when extraction/embedding semantics change.
+No latency/SLA/cost or extraction accuracy figures are invented or guaranteed.
+
+BACKUP AND RESTORE DRILL (ISOLATED ENVIRONMENT ONLY)
+1. Capture encrypted pg_dump custom-format backup and matching private S3 inventory.
+2. Restore to a fresh isolated DB using pg_restore --no-owner --exit-on-error.
+3. Run alembic upgrade head; verify schema and representative tenant-access checks.
+4. Restore matching encrypted objects; replay erasure ledger; revoke sessions.
+5. Reset stale job leases or let them expire, start workers, inspect queue-status.
+6. Verify sampled page hashes, review state, tenant denial and Q&A citations.
+7. Record actual RPO/RTO and loss observations; never point a drill at production.
+Rollback app images only with backward-compatible schema. For destructive migrations,
+take an encrypted snapshot and use a rehearsed restore plan, not blind downgrade.
+
+RELEASE GATES STILL REQUIRED
+Live S3/KMS, SMTP, ClamAV, real English OCR, AI model contract, official source corpus,
+professional qualifications, domain accuracy, adversarial testing, penetration test,
+representative workload soak/load, backup restore and deployed TLS smoke tests.
+See verification.json for what was actually executed in this workspace.
