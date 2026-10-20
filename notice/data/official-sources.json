@@ -1,0 +1,17 @@
+[
+  {
+    "title": "Income Tax Department: Authenticate Notice / Order user manual",
+    "category": "income_tax",
+    "url": "https://www.incometax.gov.in/iec/foportal/help/all-topics/e-filing-services/authenticate-noticeorder-issued-itd-UM"
+  },
+  {
+    "title": "GST Portal: Reply to refund show cause notice user manual (limited scope)",
+    "category": "gst",
+    "url": "https://tutorial.gst.gov.in/userguide/refund/File_reply_manual.htm"
+  },
+  {
+    "title": "eCourts Services: District and Taluka case search",
+    "category": "court",
+    "url": "https://services.ecourts.gov.in/ecourtindia_v6/"
+  }
+]
