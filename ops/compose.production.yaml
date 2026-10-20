@@ -1,0 +1,52 @@
+name: notice-saathi-production
+x-app: &app
+  image: ${NOTICE_IMAGE:?set immutable registry image digest}
+  env_file: ../.env.production
+  environment:
+    NS_ENVIRONMENT: production
+    NS_STORAGE: s3
+    NS_SECURE_COOKIES: "true"
+  restart: unless-stopped
+  read_only: true
+  tmpfs: ["/tmp:size=256m,mode=1777"]
+  cap_drop: ["ALL"]
+  security_opt: ["no-new-privileges:true"]
+  mem_limit: 768m
+  cpus: 1.5
+  depends_on:
+    migrate: {condition: service_completed_successfully}
+services:
+  migrate:
+    image: ${NOTICE_IMAGE:?set immutable registry image digest}
+    env_file: ../.env.production
+    environment: {NS_ENVIRONMENT: production, NS_STORAGE: s3, NS_SECURE_COOKIES: "true"}
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+  api:
+    <<: *app
+  extract:
+    <<: *app
+    command: ["notice-worker", "--pool", "extract"]
+  ocr:
+    <<: *app
+    command: ["notice-worker", "--pool", "ocr"]
+    mem_limit: 1536m
+  ai:
+    <<: *app
+    command: ["notice-worker", "--pool", "ai"]
+  mail:
+    <<: *app
+    command: ["notice-worker", "--pool", "mail"]
+  maintenance:
+    <<: *app
+    command: ["notice-worker", "--pool", "maintenance"]
+  proxy:
+    image: caddy:2.10
+    environment: {NOTICE_HOST: "${NOTICE_HOST:?set HTTPS hostname}"}
+    ports: ["80:80", "443:443"]
+    volumes: ["./Caddyfile:/etc/caddy/Caddyfile:ro", "caddy_data:/data", "caddy_config:/config"]
+    depends_on: [api]
+    restart: unless-stopped
+volumes:
+  caddy_data:
+  caddy_config:

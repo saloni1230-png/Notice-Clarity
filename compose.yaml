@@ -1,0 +1,62 @@
+name: notice-saathi
+x-app: &app
+  build: .
+  env_file: .env
+  restart: unless-stopped
+  volumes: ["objects:/data/objects"]
+  read_only: true
+  tmpfs: ["/tmp:size=256m,mode=1777"]
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: ["ALL"]
+  mem_limit: 768m
+  cpus: 1.5
+  depends_on:
+    migrate: {condition: service_completed_successfully}
+services:
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: notice
+      POSTGRES_USER: notice
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-notice}
+    volumes: ["postgres:/var/lib/postgresql/data"]
+    healthcheck: {test: ["CMD-SHELL", "pg_isready -U notice -d notice"], interval: 5s, timeout: 3s, retries: 20}
+    restart: unless-stopped
+  migrate:
+    build: .
+    env_file: .env
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db: {condition: service_healthy}
+  api:
+    <<: *app
+    ports: ["127.0.0.1:65030:8000"]
+    healthcheck: {test: ["CMD", "curl", "-fsS", "http://localhost:8000/health/ready"], interval: 15s, timeout: 5s, retries: 3}
+  extract:
+    <<: *app
+    command: ["notice-worker", "--pool", "extract"]
+  ocr:
+    <<: *app
+    command: ["notice-worker", "--pool", "ocr"]
+    mem_limit: 1536m
+  ai:
+    <<: *app
+    command: ["notice-worker", "--pool", "ai"]
+  mail:
+    <<: *app
+    command: ["notice-worker", "--pool", "mail"]
+  maintenance:
+    <<: *app
+    command: ["notice-worker", "--pool", "maintenance"]
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports: ["127.0.0.1:8025:8025"]
+  clamav:
+    image: clamav/clamav:1.4
+    volumes: ["clamav:/var/lib/clamav"]
+    mem_limit: 2048m
+    healthcheck: {test: ["CMD", "clamdscan", "--ping", "1"], interval: 30s, timeout: 5s, retries: 10, start_period: 120s}
+volumes:
+  postgres:
+  objects:
+  clamav:
