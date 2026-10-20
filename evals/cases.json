@@ -1,0 +1,12 @@
+[
+  {"name":"clear English deadline","text":"Reply before 31 October 2026.","date":"2026-10-31","kind":"deadline"},
+  {"name":"ambiguous numeric date","text":"Reply before 03/04/2026.","date":null,"kind":"deadline"},
+  {"name":"unambiguous numeric date","text":"Reply before 31/10/2026.","date":"2026-10-31","kind":"deadline"},
+  {"name":"invalid date","text":"Reply before 31/02/2026.","date":null,"kind":"deadline"},
+  {"name":"Written deadline","text":"reply 31/10/2026 reply before.","date":"2026-10-31","kind":"deadline"},
+  {"name":"issue date is not deadline","text":"Date of issue: 20 October 2026.","date":"2026-10-20","kind":"notice_date"},
+  {"name":"ISO deadline","text":"Please respond before 2026-10-31.","date":"2026-10-31","kind":"deadline"},
+  {"name":"unlabelled date","text":"Record: 31 October 2026.","date":"2026-10-31","kind":"other"},
+  {"name":"month day equality","text":"Reply before 04/04/2026.","date":"2026-04-04","kind":"deadline"},
+  {"name":"missing deadline","text":"Please provide supporting documents.","date":null,"kind":null}
+]
