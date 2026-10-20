@@ -8,6 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="NS_", env_file=".env", extra="ignore")
     environment: str = "development"
+    embedded_worker: bool = False
     database_url: str = "postgresql+psycopg://notice:notice@localhost:5432/notice"
     public_url: str = "http://localhost:8000"
     secret: str = "development-only-replace-with-64-random-characters-before-deployment"

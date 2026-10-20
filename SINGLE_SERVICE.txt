@@ -1,0 +1,88 @@
+NOTICE CLARITY: ONE WEB SERVICE, NO SEPARATE WORKER SERVICES
+
+Enable this environment variable on the API service:
+  NS_EMBEDDED_WORKER=true
+
+Docker start command (also suitable for Render's Docker Command field):
+  python -m notice.serve --migrate
+
+The existing Dockerfile installs Tesseract and starts from Python 3.12. Use Docker
+runtime, not Render's native Python runtime. Choose the repository root containing
+Dockerfile, notice/, migrations/ and alembic.ini. No separate frontend deployment
+is needed. Do not deploy the accidentally nested notice-clarity/ copy.
+
+Database connections explicitly use UTC so daily budgets and timestamp dates do
+not change with a hosting provider's local timezone.
+
+Render settings:
+  Service type: Web Service
+  Runtime: Docker
+  Dockerfile path: ./Dockerfile
+  Docker build context: .
+  Docker Command: python -m notice.serve --migrate
+  Health check: /health/ready
+  Environment: NS_EMBEDDED_WORKER=true
+  PORT: use the platform-provided value (Render defaults to 10000)
+  NS_PUBLIC_URL: the actual https://YOUR-SERVICE.onrender.com URL
+  NS_SECURE_COOKIES: true
+
+Keep the existing database, storage, scanner, mail and AI settings. Database URLs
+must use postgresql+psycopg:// for this SQLAlchemy driver. External databases that
+require TLS need their documented sslmode/certificate options. Never use localhost,
+the Compose hostname db, or mailpit as a cloud dependency address. Add secrets in
+the provider dashboard, not GitHub or this file. Generate a strong NS_SECRET once
+and preserve it across redeploys; do not regenerate it each time the service starts.
+
+NS_ENVIRONMENT=production still requires the same private S3/KMS, scanner,
+authenticated TLS SMTP, verification and secret settings. This mode does not turn
+off security checks, replace real email with a fake inbox, or change AI behavior.
+Free Render blocks the usual SMTP ports and cannot run a private ClamAV service
+for free; those dependencies need a supported external setup. The new mode alone
+does not make the complete production deployment free or ready to launch.
+
+HOW IT WORKS
+The API owns one processing thread which visits mail, extract, OCR, AI and
+maintenance pools fairly. Only one job handler runs at a time in this process.
+HTTP handlers remain available while jobs wait for OCR, database or provider I/O.
+Heavy CPU work shares the host with HTTP and still needs sufficient memory/CPU.
+It is a background executor inside the web service, not removal of job execution.
+
+Every job still uses the existing PostgreSQL claim, owner fencing, heartbeat,
+retry, dead-letter and checkpoint mechanisms. Nothing is kept only in an in-memory
+queue. On shutdown the processor stops claiming work and gives its current handler
+up to ten seconds to finish. If the host then terminates it, the next process can
+reclaim the expired lease. Already started SMTP/AI calls may have external side
+effects before an abrupt shutdown, exactly as with separate workers.
+
+Use one Uvicorn process per service to keep heavy-job concurrency at one. The new
+serve entry point enforces this. A custom multi-process command starts one embedded
+processor per process. Database locking still applies, but memory use multiplies.
+For independent scaling later, set NS_EMBEDDED_WORKER=false and use the existing
+notice-worker --pool commands. No database migration is added by this feature.
+
+FREE HOST LIMITS
+Render Free sleeps after fifteen minutes without incoming traffic. Jobs pause while
+the service is asleep and resume after the service wakes; retries wait too. Heavy
+OCR or model loading may exceed the instance's memory limit. No load or memory
+capacity on Render has been verified. Do not present this as an always-on service.
+
+The service filesystem is temporary. Uploads and page images in local storage can
+disappear on restart/redeploy/sleep. The queue cannot reconstruct an original file
+that no longer exists. Use durable private object storage to preserve documents.
+Render's free PostgreSQL expires after thirty days. Database and object storage
+are required separately; the launcher does not provision them. AI provider usage
+also has its own limits and costs. Vercel is not needed for the included frontend.
+
+LOCAL USE
+The default remains NS_EMBEDDED_WORKER=false so your current Compose services are
+unchanged. To try one-service processing locally, set NS_EMBEDDED_WORKER=true in
+.env, stop the five existing job containers, and recreate the API:
+  docker compose stop extract ocr ai mail maintenance
+  docker compose up -d --build --no-deps api
+Keep db, clamav and mailpit running. A later plain docker compose up -d starts the
+separate worker services again; choose one deployment mode deliberately.
+
+Official platform references, checked 21 October 2026:
+  https://render.com/docs/deploy-docker
+  https://render.com/docs/web-services
+  https://render.com/docs/free

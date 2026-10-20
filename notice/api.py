@@ -1,7 +1,9 @@
+import asyncio
 import json
 import re
 import secrets
 import time
+from contextlib import asynccontextmanager
 from datetime import date, timedelta
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -69,12 +71,32 @@ from .workspace import context_digest, schedule_summary
 WEB = Path(__file__).parent / "web"
 REQUESTS = Counter("notice_http_requests", "HTTP requests", ["method", "route", "status"])
 LATENCY = Histogram("notice_http_seconds", "HTTP latency", ["route"])
+
+
+@asynccontextmanager
+async def lifespan(application):
+    processor = None
+    try:
+        if settings().embedded_worker:
+            from .embedded import EmbeddedProcessor
+
+            processor = EmbeddedProcessor()
+            application.state.embedded_processor = processor
+            processor.start()
+        yield
+    finally:
+        if processor is not None:
+            await asyncio.to_thread(processor.stop)
+            application.state.embedded_processor = None
+
+
 app = FastAPI(
     title="Notice Clarity",
     version="1.0.1",
     docs_url=None,
     redoc_url=None,
     openapi_url="/api/openapi.json" if settings().environment != "production" else None,
+    lifespan=lifespan,
 )
 
 
@@ -163,6 +185,10 @@ def live():
 
 @app.get("/health/ready")
 def ready(db=Depends(get_db)):
+    if settings().embedded_worker:
+        processor = getattr(app.state, "embedded_processor", None)
+        if processor is None or not processor.running:
+            raise HTTPException(503, "Embedded processing unavailable")
     try:
         versions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
     except SQLAlchemyError as error:

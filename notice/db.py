@@ -21,7 +21,7 @@ def engine():
             "pool_size": 8,
             "max_overflow": 8,
             "pool_timeout": 15,
-            "connect_args": {"options": "-c statement_timeout=30000 -c lock_timeout=5000"},
+            "connect_args": {"options": "-c statement_timeout=30000 -c lock_timeout=5000 -c timezone=UTC"},
         }
     )
     return create_engine(url, pool_pre_ping=True, **opts)
