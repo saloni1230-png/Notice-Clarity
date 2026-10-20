@@ -1,9 +1,9 @@
 {
   "product": "Notice Clarity",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "verified_on": "2026-10-20",
   "release_state": "Implemented and locally tested codebase; public production deployment not verified",
-  "delivery": "One self-extracting Python distribution and equivalent clean repository ZIP; modular runtime",
+  "delivery": "Updated modular Git repository; no Markdown files added",
   "implemented": [
     "English-only responsive frontend, onboarding, case workspace, document viewer and approximate word evidence highlights",
     "PostgreSQL models, explicit Alembic migrations and schema-version readiness checks",
@@ -16,17 +16,23 @@
     "Argon2id auth, verification, recovery, session revocation, CSRF/origin protection, organization roles and audit events",
     "Private local development storage or production S3/KMS adapter; image cache; ClamAV scanner adapter; retention and case deletion",
     "Encrypted email outbox, per-organization model token/cost/concurrency budgets and tenant-scoped content-hash deduplication",
-    "Version-and-hash dependency locks, CI, Docker profiles, TLS proxy template, metrics, alert rules and operations runbooks"
+    "Version-and-hash dependency locks, CI, Docker profiles, TLS proxy template, metrics, alert rules and operations runbooks",
+    "Exact offset passage retrieval across complete pages and approved source snapshots; bounded tenant-scoped inverted-index cache",
+    "Useful deterministic issuer/request/reference/amount/date extraction and focused factual answers without an AI provider",
+    "Durable per-chunk extraction and embedding checkpoints, transient retry classification, generation-fenced reanalysis and revision-fenced summary refresh",
+    "Tokenizer-based budgets, shared HTTP connection pools, atomic actual-usage settlement, bounded provider responses and finite indexed embedding validation",
+    "Contiguous quotation highlights, rotated-page coordinates, weighted OCR confidence and strict numeric/date evidence checks"
   ],
   "tested": {
     "backend": {
-      "passed": 38,
+      "passed": 108,
       "skipped": 1,
       "database": "real PostgreSQL 17.10",
       "python": "3.12.14",
-      "line_coverage_percent": 77.1,
+      "line_coverage_percent": 82.6,
       "skip_reason": "Tesseract with eng is not provisioned on this Windows host",
-      "warning": "Starlette TestClient httpx deprecation warning"
+      "warning": "Starlette TestClient httpx deprecation warning",
+      "additional_regression": "Final failed-page fact exclusion passed after the complete suite"
     },
     "browser": {
       "passed": 2,
@@ -40,27 +46,14 @@
     },
     "database": {
       "migrations_applied": true,
-      "model_drift": false,
-      "restore": {
-        "status": "passed",
-        "matched_tables": 18,
-        "scope": "local PostgreSQL logical dump and restore, no S3/backup-encryption/erasure-ledger drill"
-      }
+      "model_drift": false
     },
     "dependency_audit": {
       "scanner": "OSV exact runtime versions",
-      "runtime_packages": 48,
+      "runtime_packages": 52,
       "known_advisories": 0,
       "npm_known_vulnerabilities": 0,
       "limitation": "Known advisory lookup at this date; not a penetration test or security certification"
-    },
-    "local_load_smoke": {
-      "scope": "100 synthetic empty-workspace reads, one account, 8 threads, local host; not capacity proof",
-      "requests": 100,
-      "success": 100,
-      "seconds": 2.168,
-      "median_ms": 3.47,
-      "p95_ms": 2059.25
     },
     "compose": {
       "development_config_valid": true,
@@ -71,7 +64,18 @@
       "ruff check passed",
       "JavaScript syntax passed",
       "Alembic model drift check passed"
-    ]
+    ],
+    "benchmark": {
+      "scope": "Synthetic in-process lexical passage index; excludes OCR, DB, models and HTTP",
+      "pages": 80,
+      "characters": 1460320,
+      "passages": 960,
+      "queries": 80,
+      "top1_exact_identifier_hits": 80,
+      "build_ms": 177.115,
+      "query_median_ms": 0.04,
+      "query_p95_ms": 0.049
+    }
   },
   "external_configuration_required": [
     "Provision and verify Docker runtime or deployment platform, managed PostgreSQL with least-privilege roles and TLS",
@@ -84,7 +88,7 @@
     "Configure HTTPS domain, ingress limits, secrets, telemetry, backups, privacy contact and retention policy"
   ],
   "pending_validation": [
-    "Docker image build and actual compose deployment: Docker daemon was not running on this host",
+    "Docker build/run: sandbox cannot access the Docker Desktop Linux-engine named pipe",
     "Real English OCR execution and representative noisy/multilingual scans",
     "Live model generation, live embeddings and real cross-encoder reranking; provider contracts were mocked in tests",
     "Live SMTP, S3/KMS and ClamAV integrations; adapters have local/contract checks only",
@@ -97,8 +101,8 @@
   "scope_limits": {
     "default_upload": "20 MB / 80 pages; PDFs, single PNG or JPEG; encrypted PDFs rejected",
     "case_access": "All members of an organization can access its active cases; no per-case private sharing",
-    "summary": "Retrieved pages and total page count are displayed; summary coverage is not guaranteed to include every page",
-    "no_ai": "Exact excerpts and deterministic candidates only, clearly labelled; not full semantic understanding",
+    "summary": "Bounded fact ledger balanced by kind and distant pages plus relevant passages; supplied fact count and total are reported",
+    "no_ai": "Explicit quoted document facts and focused factual answers; not unrestricted semantic interpretation",
     "sources": "Starter manifest is procedural portal discovery, not a complete approved legal corpus",
     "legal": "Does not file replies, make payments, calculate limitation periods or certify legal advice",
     "audit": "Application audit table, not immutable/tamper-proof against database administrators",

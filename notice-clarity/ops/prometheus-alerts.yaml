@@ -1,0 +1,18 @@
+groups:
+  - name: notice-saathi
+    rules:
+      - alert: NoticeDeadJobs
+        expr: sum(notice_jobs{status="dead"}) > 0
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "Notice jobs exhausted retries; inspect queue-status"}
+      - alert: NoticeAPIUnavailable
+        expr: up{job="notice-api"} == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations: {summary: "Notice API metrics target unavailable"}
+      - alert: NoticeHighErrorRate
+        expr: sum(rate(notice_http_requests_total{status=~"5.."}[5m])) / clamp_min(sum(rate(notice_http_requests_total[5m])), 1) > 0.05
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "Notice API server error rate above 5 percent"}

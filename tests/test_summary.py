@@ -8,7 +8,7 @@ from notice.workspace import context_digest
 from conftest import drain
 
 
-def test_automatic_summary_is_generated_and_context_changes_mark_it_stale(client, uploaded):
+def test_automatic_summary_refreshes_after_context_changes(client, uploaded):
     drain()
     first = client.get(f"/api/cases/{uploaded}").json()["explanation"]
     assert first and first["status"] == "done" and not first["stale"]
@@ -17,7 +17,10 @@ def test_automatic_summary_is_generated_and_context_changes_mark_it_stale(client
         client.patch(f"/api/cases/{uploaded}/context", json={"notes": "Additional context"}).status_code
         == 200
     )
-    assert client.get(f"/api/cases/{uploaded}").json()["explanation"]["stale"]
+    assert client.get(f"/api/cases/{uploaded}").json()["explanation"]["status"] == "queued"
+    drain()
+    refreshed = client.get(f"/api/cases/{uploaded}").json()["explanation"]
+    assert refreshed["status"] == "done" and not refreshed["stale"]
 
 
 def test_expired_source_marks_existing_answer_stale(client, uploaded):

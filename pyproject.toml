@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "notice-clarity"
-version = "1.0.1"
+version = "1.1.0"
 description = "English-only evidence workspace for Indian notices"
 requires-python = ">=3.12"
 dependencies = [
@@ -12,7 +12,7 @@ dependencies = [
   "psycopg[binary]>=3.2,<4", "pydantic-settings>=2.8,<3", "python-multipart>=0.0.20,<1",
   "httpx>=0.28,<1", "argon2-cffi>=23.1,<26", "pymupdf>=1.26,<2", "pillow>=11,<13",
   "boto3>=1.38,<2", "alembic>=1.15,<2", "email-validator>=2.2,<3", "prometheus-client>=0.21,<1",
-  "cryptography>=50.0.2,<51"
+  "cryptography>=50.0.2,<51", "tiktoken>=0.12,<1"
 ]
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "pytest-cov>=6,<8", "respx>=0.22,<1", "ruff>=0.11,<1", "pyyaml>=6,<7", "locust>=2.37,<3"]

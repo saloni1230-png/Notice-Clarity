@@ -81,6 +81,8 @@ class Document(Base):
     org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), index=True)
     digest: Mapped[str] = mapped_column(String(64))
     version: Mapped[str] = mapped_column(String(40))
+    analysis_version: Mapped[str] = mapped_column(String(40), default="")
+    generation: Mapped[int] = mapped_column(Integer, default=1)
     object_key: Mapped[str] = mapped_column(String(200))
     filename: Mapped[str] = mapped_column(String(160))
     mime: Mapped[str] = mapped_column(String(40))
@@ -109,7 +111,16 @@ class Page(Base):
     status: Mapped[str] = mapped_column(String(16), default="pending")
     facts: Mapped[list] = mapped_column(JSON, default=list)
     flags: Mapped[list] = mapped_column(JSON, default=list)
-    embedding: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    embedding: Mapped[list | dict | None] = mapped_column(JSON, nullable=True)
+
+
+class AnalysisChunk(Base):
+    __tablename__ = "analysis_chunks"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    page_id: Mapped[str] = mapped_column(ForeignKey("pages.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(16))
+    result: Mapped[dict] = mapped_column(JSON)
+    created: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
 class Case(Base):
@@ -141,6 +152,7 @@ class Question(Base):
     case_id: Mapped[str] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"), index=True)
     question: Mapped[str] = mapped_column(String(1200))
     kind: Mapped[str] = mapped_column(String(16), default="question")
+    revision: Mapped[int] = mapped_column(Integer, default=1)
     status: Mapped[str] = mapped_column(String(20), default="queued")
     answer: Mapped[dict] = mapped_column(JSON, default=dict)
     created: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)

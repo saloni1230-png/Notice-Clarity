@@ -1,0 +1,51 @@
+{
+  "labels": {
+    "e9b7aae7a99af3d9e16c0902f43c817a3b1e203794a202fc18964e692a2fcfd2": "If an account exists, a password reset link will be emailed.",
+    "10c8e35d59002f2344ced5a63fe958a0d33e463e091c78c9cbd5c7822e87f284": "Verify the notice on the official portal",
+    "00d7c924d5297bb0e9e96813260962e07e695ebe65861eb91bab3d05c5bd6c7e": "Keep the original notice and supporting documents",
+    "122a6a64873e3101ad2687e37c3d07979c0ea7c526fdf448aa20cad7a060732c": "Email verification",
+    "7f0eebce584b8df7b251219c7bd95d1352ae8e92412e2ef5e9f901a5c439b642": "Password reset",
+    "ff38b5f1156fc273fcf498797493b93692c8b77a5868faa6a4af33b6584e2d61": "This email is already registered. Sign in or reset your password.",
+    "baec020d4cace95d79149c5551199db886aeabed1f5d952923a4831097b6be72": "My workspace",
+    "2bb09ea278d734973e52f1aac6340204435eced1294481a82ada13de8077e4c5": "Incorrect email or password.",
+    "cca34cd8f69563e1e82a0c00582241fb19be7fbb4aa0c844ef1afdc0b583ad46": "The link is invalid or has expired.",
+    "be3bf7e5e938c1ee91f65d90bac264c24973a9b0bc551803e19387bfa335db98": "The verification link is invalid or has expired.",
+    "9305c64de5b9b8924627ca6914146cdb1e78bd111a4b85686c56d4ea7e2f30fb": "Case not found.",
+    "7a4e289245e1804c7de743630b1f6dd6268b03088931b4119ae73590e65f2775": "Create and verify the account first.",
+    "0ce62bb22d03da5f74ce6310b1ec89a20e6464e7d18bf56390df7deb4f518ad1": "Enter a valid receipt date.",
+    "e2de69ae1bce25bd527285ac60e6973f36478a99f4519f459bf3baf5e653f1f5": "These excerpts do not establish an answer to your question. Ask a qualified professional to review them.",
+    "33cc96d45513cfe8c647d7b4c22eb042164369b650fbd76cdc06f6acb9f75c8b": "Explain this notice in plain English. Identify what the document requests, the dates and amounts it states, and any missing context or professional review needed. Do not infer legal conclusions.",
+    "f03bea4eba091a6088bc0e8c7ae37ec5325bf9a59e439d6a34598af8bbc8b55c": "Ask your accountant or lawyer to confirm the context and dates before responding",
+    "2a1f38048c6b6045bf1e0e094964a6ee803eb39f94447e6e0b127b35f8d351c8": "Open this link within 30 minutes. Ignore this email if you did not request it.\n\n",
+    "5a29b5431157e7d0ee9db6b19ed351bf55b3eecfc951497c6c13a94768433c1f": "income.tax|Income tax",
+    "3632243c41110f6da124b9df90a065d7706a2f8848dda6add3c655cabba7a18c": "court|Court|summons",
+    "0e75d578bda6b4118c8ac7112fccbcbb1a83f579593771075155697e95c4c4dd": "bank\\s+notice|Bank\\s+notice|loan recall|recovery notice|banking",
+    "8a0096271d3414df50bd9bd6a532d9463fc29f6020bbe85494808c9a84428469": "\\bDIN\\b|\\bCNR\\b|reference\\s*(?:no|number)|Context",
+    "77847091c7897b91a0c06cbdd04ea8b691df9e3e344af11e2f4a61b462297918": "reply|respond|before|due|deadline|before|reply",
+    "c67f3dcf0127f7b637c1a53922bc0616b78eb6a7c2cf61cdd971c15a19cd6106": "issued|dated|date of issue|issued|dated",
+    "cf6de0238d0138492795f8ecaabf93ff2bc5635873b358438bc64c3833374504": "Confirm the date stated in the notice: ",
+    "2f521e19eba6f250b184832061e3fde93adde8b7aa7709890d71ae1c88ff01ab": "Check the requested information: "
+  },
+  "prefixes": [
+    {
+      "length": 30,
+      "sha256": "25c44ccc2dfab4aa04d631a0fccbe986dfcd46e08a9f5963ef17a9c66cc3af31",
+      "replacement": "Scheduled deletion:"
+    },
+    {
+      "length": 31,
+      "sha256": "cc9b1c3a8e3c7e5b5c313455220d653beb99a6018b0694b11fc5186e751c5af1",
+      "replacement": "Check the requested information:"
+    },
+    {
+      "length": 36,
+      "sha256": "9582a8f568e1f4c55d8584ad369eb95c44f21602e180aa883320770b8f6c957a",
+      "replacement": "Confirm the date stated in the notice:"
+    },
+    {
+      "length": 25,
+      "sha256": "a1de96f16383534b98f30f76dfcd9d83542726d81e20f9bb37f431963583778f",
+      "replacement": "Pages retrieved for this summary:"
+    }
+  ]
+}

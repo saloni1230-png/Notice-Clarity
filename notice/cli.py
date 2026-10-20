@@ -1,5 +1,6 @@
 import argparse
 import json
+import shutil
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -29,6 +30,7 @@ def main():
     approve.add_argument("--valid-to")
     commands.add_parser("sources-status")
     commands.add_parser("queue-status")
+    commands.add_parser("doctor")
     redrive = commands.add_parser("redrive")
     redrive.add_argument("id")
     commands.add_parser("cleanup")
@@ -36,7 +38,40 @@ def main():
     reconcile.add_argument("--delete", action="store_true")
     args = parser.parse_args()
     with session_scope() as db:
-        if args.command == "sources-fetch":
+        if args.command == "doctor":
+            cfg = settings()
+            queues = {}
+            for pool, status in db.execute(
+                select(Job.pool, Job.status).where(Job.status.in_(["queued", "running", "dead"]))
+            ):
+                key = f"{pool}:{status}"
+                queues[key] = queues.get(key, 0) + 1
+            print(
+                json.dumps(
+                    {
+                        "engine_version": cfg.pipeline_version,
+                        "ai": {
+                            "configured": bool(cfg.ai_api_key and cfg.ai_model),
+                            "model": cfg.ai_model or None,
+                            "mode": "structured_ai"
+                            if cfg.ai_api_key and cfg.ai_model
+                            else "document_facts_only",
+                            "embedding_model": cfg.embedding_model or None,
+                            "daily_token_budget": cfg.org_daily_tokens,
+                            "daily_cost_usd": cfg.org_daily_cost_usd,
+                        },
+                        "ocr_executable_found": bool(shutil.which(cfg.tesseract_path)),
+                        "scanner_configured": bool(cfg.scanner_host),
+                        "queues": queues,
+                        "approved_source_snapshots": len(
+                            db.scalars(select(Source.id).where(Source.approved_until > now())).all()
+                        ),
+                        "provider_connection_tested": False,
+                    },
+                    indent=2,
+                )
+            )
+        elif args.command == "sources-fetch":
             for item in json.loads(Path(args.manifest).read_text(encoding="utf-8")):
                 try:
                     row = ingest(db, item["url"], item["title"], item["category"])

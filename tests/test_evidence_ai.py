@@ -162,7 +162,10 @@ def test_unsupported_legal_interpretation_is_withheld(client, uploaded, monkeypa
 
     monkeypatch.setattr(ai, "structured", fake)
     assert (
-        client.post(f"/api/cases/{uploaded}/questions", json={"question": "What amount?"}).status_code == 202
+        client.post(
+            f"/api/cases/{uploaded}/questions", json={"question": "Do I have to pay immediately?"}
+        ).status_code
+        == 202
     )
     drain()
     q = client.get(f"/api/cases/{uploaded}").json()["questions"][0]

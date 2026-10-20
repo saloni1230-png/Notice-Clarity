@@ -1,5 +1,7 @@
 .git
 .env
+.env.*
+!.env.example
 .venv
 .runtime
 __pycache__
@@ -8,4 +10,9 @@ __pycache__
 node_modules
 test-results
 htmlcov
+playwright-report
+dependency-audit.json
+eval-results.json
+engine-benchmark.json
+.coverage*
 *.egg-info

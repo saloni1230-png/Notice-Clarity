@@ -9,6 +9,10 @@ from .db import session_scope
 from .models import Job, Org, now, uid
 
 
+class PrerequisitePending(RuntimeError):
+    pass
+
+
 def enqueue(db, key, pool, kind, payload, org_id=None):
     values = dict(
         id=uid(),
@@ -107,8 +111,15 @@ def retry(job, error):
             return
         row = db.get(Job, job.id)
         row.error = type(error).__name__[:100]  # Never store provider bodies, document text or secrets.
+        if isinstance(error, PrerequisitePending):
+            row.attempts = max(0, row.attempts - 1)
+            row.status = "queued"
+            row.available = now() + timedelta(seconds=5)
+            row.lease_until = None
+            return
         row.status = "dead" if row.attempts >= 4 else "queued"
-        row.available = now() + timedelta(seconds=min(300, 2**row.attempts * 5))
+        delay = max(2**row.attempts * 5, getattr(error, "retry_after", 0) or 0)
+        row.available = now() + timedelta(seconds=min(300, delay))
         row.lease_until = None
         if row.status == "dead":
             from .pipeline import mark_failed

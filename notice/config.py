@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     mail_from: str = "Notice Clarity <noreply@example.test>"
     metrics_token: str = ""
     lease_seconds: int = 180
-    pipeline_version: str = "2026-10-20.1"
+    pipeline_version: str = "2026-10-20.3"
 
     @model_validator(mode="after")
     def production_guard(self):

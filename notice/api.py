@@ -421,6 +421,7 @@ def upload(file: UploadFile, request: Request, auth=Depends(membership), db=Depe
             org_id=member.org_id,
             digest=digest,
             version=settings().pipeline_version,
+            analysis_version=settings().pipeline_version,
             object_key=key,
             filename=filename,
             mime=mime,
@@ -467,6 +468,8 @@ def detail(case_id: str, auth=Depends(membership), db=Depends(get_db)):
     def is_stale(answer):
         return bool(answer) and (
             answer.get("context_hash") != signature
+            or answer.get("generation", doc.generation) != doc.generation
+            or answer.get("pipeline_version", doc.analysis_version) != doc.analysis_version
             or any(source_id not in fresh_sources for source_id in answer.get("sources", {}))
         )
 
@@ -480,7 +483,8 @@ def detail(case_id: str, auth=Depends(membership), db=Depends(get_db)):
         "category": doc.category,
         "flags": doc.flags,
         "facts": doc.facts,
-        "pipeline_version": doc.version,
+        "pipeline_version": doc.analysis_version or doc.version,
+        "engine_version": settings().pipeline_version,
         "ai_enabled": bool(settings().ai_api_key),
         "search": {
             "lexical": True,
@@ -575,7 +579,46 @@ def context(case_id: str, body: ContextInput, auth=Depends(membership), db=Depen
     if review:
         review.status = "open"
         review.updated = now()
+    # Recompute immediately; saving context must not leave a permanently stale summary.
+    schedule_summary(db, case, refresh=True)
     audit(db, auth[1].org_id, auth[0].id, "context.updated", case.id)
+    return {"ok": True}
+
+
+@app.post("/api/cases/{case_id}/reprocess", status_code=202)
+def reprocess(case_id: str, auth=Depends(membership), db=Depends(get_db)):
+    case = get_case(db, case_id, auth[1])
+    if auth[1].role not in {"owner", "admin"}:
+        raise HTTPException(403, "Only a workspace owner or admin can reanalyze a notice.")
+    rate_limit(db, "reprocess", case.document_id, 3, 3600)
+    doc = db.scalar(select(Document).where(Document.id == case.document_id).with_for_update())
+    if doc.status in {"queued", "extracting"}:
+        raise HTTPException(409, "This notice is still processing.")
+    if db.scalar(
+        select(Page.id).where(Page.document_id == doc.id, Page.status.not_in(["done", "failed"])).limit(1)
+    ):
+        raise HTTPException(409, "Some pages are still processing.")
+    doc.generation += 1
+    doc.analysis_version = settings().pipeline_version
+    doc.status = "extracting"
+    existing = {p.number: p for p in db.scalars(select(Page).where(Page.document_id == doc.id))}
+    for number in range(1, doc.page_count + 1):
+        page = existing.get(number)
+        if page is None:
+            page = Page(document_id=doc.id, number=number, text="")
+            db.add(page)
+        kind = "understand" if page.status == "done" and page.text.strip() else "extract"
+        pool = "ai" if kind == "understand" else "extract"
+        page.status = "understanding" if kind == "understand" else "pending"
+        enqueue(
+            db,
+            f"reprocess:{doc.id}:{doc.generation}:{page.number}",
+            pool,
+            kind,
+            {"document_id": doc.id, "page": page.number, "generation": doc.generation},
+            doc.org_id,
+        )
+    audit(db, auth[1].org_id, auth[0].id, "case.reprocessed", case.id)
     return {"ok": True}
 
 

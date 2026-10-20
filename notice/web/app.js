@@ -194,6 +194,16 @@ function home() {
       "",
     )}</div><footer class="footer"><span>Notice Clarity is an independent service, unaffiliated with any government department.</span><button class="text-btn" data-action="privacy">Privacy and data</button></footer>`;
 }
+function answerLabel(answer) {
+  if (answer.mode === "verified_ai") return "AI explanation · evidence and support checked";
+  if (answer.answer_type === "document_facts") return "Document facts · original evidence linked";
+  return "No supported answer found";
+}
+function engineNote(answer) {
+  if (answer.mode === "verified_ai") return "Document-based AI explanation; professional review is still required.";
+  if (answer.fallback_reason === "not_configured") return "AI is not configured on this server. Verified document facts are available below.";
+  return "The model explanation was unavailable or failed evidence checks. Verified document facts are shown below.";
+}
 function explanationBlock(c) {
   const summary = c.explanation;
   if (!summary) return "";
@@ -210,7 +220,7 @@ function explanationBlock(c) {
         `<div class="claim"><span class="tag">Official-source statement · applicability requires review</span><p>${escape(claim.text)}</p><blockquote>${escape(claim.source_quote)}</blockquote><a href="${escape(answer.sources?.[claim.source_id]?.url || "#")}" target="_blank" rel="noopener noreferrer">Official sources ↗</a></div>`,
     )
     .join("");
-  return `${missing}${sourceClaims}<h3>Document summary</h3><p class="sub">${answer.mode === "verified_ai" ? "Document-based AI summary; professional review is still required." : "The AI summary could not be verified. Relevant original excerpts are shown instead."}</p>${summary.stale ? '<p class="notice-banner">This summary used earlier context or source approvals. Ask a new question to check it again.</p>' : ""}${(answer.claims || []).map((claim, index) => (claim.basis === "official_source" ? "" : `<div class="claim">${escape(claim.text)}${claim.evidence ? `<div><button class="evidence" data-action="cite-summary" data-index="${index}">Page ${claim.evidence.page} evidence ↗</button></div>` : ""}</div>`)).join("")}<p class="case-meta">Pages retrieved for this summary: ${(answer.coverage?.pages || []).join(", ") || "None"} / total ${answer.coverage?.total || c.page_count}. Inspect all pages and facts separately.</p><hr>`;
+  return `${missing}${sourceClaims}<h3>Document summary</h3><p class="sub">${engineNote(answer)}</p>${summary.stale ? '<p class="notice-banner">This summary used earlier context or source approvals. Reanalyze the notice to refresh its summary.</p>' : ""}${(answer.claims || []).map((claim, index) => (claim.basis === "official_source" ? "" : `<div class="claim">${escape(claim.text)}${claim.evidence ? `<div><button class="evidence" data-action="cite-summary" data-index="${index}">Page ${claim.evidence.page} evidence ↗</button></div>` : ""}</div>`)).join("")}<p class="case-meta">Pages supporting this summary: ${(answer.coverage?.pages || []).join(", ") || "None"} / total ${answer.coverage?.total || c.page_count}. ${answer.coverage?.facts_considered || 0} extracted facts considered. Inspect the original evidence before responding.</p><hr>`;
 }
 function factsTab(c) {
   const prefix = explanationBlock(c);
@@ -223,7 +233,7 @@ function actionsTab(c) {
   return `<h3>Your next steps</h3><p class="sub">Check off completed tasks. Ambiguous dates are never scheduled automatically.</p>${c.actions.map((a) => `<label class="check-row ${a.done ? "done" : ""}"><input type="checkbox" data-action-id="${a.id}" ${a.done ? "checked" : ""}><span>${escape(a.title)}</span></label>`).join("")}<form id="action-form" class="inline-form"><input name="title" required minlength="3" maxlength="300" placeholder="Add a task" aria-label="New task"><button class="button small">Add +</button></form>`;
 }
 function qaTab(c) {
-  return `<h3>Ask about this notice</h3><p class="sub">Answers are limited to available pages and approved sources. Missing evidence is stated explicitly.</p><form id="question-form" class="question-input"><label class="hidden" for="question">Your question</label><textarea id="question" name="question" required minlength="3" maxlength="1200" placeholder="What does this notice ask me to provide?"></textarea><button class="button">Ask ↗</button></form><div class="suggestions">${["Where is the reply deadline stated?", "What amount is stated?", "Which documents are requested?"].map((q) => `<button data-action="suggest" data-question="${escape(q)}">${q}</button>`).join("")}</div>${c.questions.map((q) => `<article class="question-card"><h3>${escape(q.question)}</h3>${q.stale ? '<p class="notice-banner">This answer was generated using earlier context or source approvals.</p>' : ""}${q.status === "queued" ? '<p class="sub loading">Finding supporting evidence...</p>' : q.status === "failed" ? '<p class="notice-banner">Processing failed. Submit a new question or ask a professional to review the notice.</p>' : `<span class="tag">${q.answer.mode === "verified_ai" ? "AI answer · evidence and support checked" : "Related excerpts · no verified conclusion"}</span>${(q.answer.claims || []).map((claim, index) => `<div class="claim">${escape(claim.text)}${claim.basis === "document" ? `<div><button class="evidence" data-action="cite-answer" data-qid="${q.id}" data-index="${index}">Page ${claim.evidence.page} evidence ↗</button></div>` : `<blockquote>${escape(claim.source_quote)}</blockquote><a href="${escape(q.answer.sources?.[claim.source_id]?.url || "#")}" target="_blank" rel="noopener noreferrer">Official sources ↗</a>`}</div>`).join("")}${(q.answer.missing_context || []).map((m) => `<p class="notice-banner">${escape(m)}</p>`).join("")}${q.answer.professional_review ? '<p class="case-meta">This question has been flagged for professional review.</p>' : ""}`}</article>`).join("")}`;
+  return `<h3>Ask about this notice</h3><p class="sub">Answers are limited to available pages and approved sources. Missing evidence is stated explicitly.</p><form id="question-form" class="question-input"><label class="hidden" for="question">Your question</label><textarea id="question" name="question" required minlength="3" maxlength="1200" placeholder="What does this notice ask me to provide?"></textarea><button class="button">Ask ↗</button></form><div class="suggestions">${["Where is the reply deadline stated?", "What amount is stated?", "Which documents are requested?"].map((q) => `<button data-action="suggest" data-question="${escape(q)}">${q}</button>`).join("")}</div>${c.questions.map((q) => `<article class="question-card"><h3>${escape(q.question)}</h3>${q.stale ? '<p class="notice-banner">This answer was generated using earlier context or source approvals.</p>' : ""}${q.status === "queued" ? '<p class="sub loading">Finding supporting evidence...</p>' : q.status === "failed" ? '<p class="notice-banner">Processing failed. Submit a new question or ask a professional to review the notice.</p>' : `<span class="tag">${answerLabel(q.answer)}</span>${(q.answer.claims || []).map((claim, index) => `<div class="claim">${escape(claim.text)}${claim.basis === "document" ? `<div><button class="evidence" data-action="cite-answer" data-qid="${q.id}" data-index="${index}">Page ${claim.evidence.page} evidence ↗</button></div>` : `<blockquote>${escape(claim.source_quote)}</blockquote><a href="${escape(q.answer.sources?.[claim.source_id]?.url || "#")}" target="_blank" rel="noopener noreferrer">Official sources ↗</a>`}</div>`).join("")}${(q.answer.missing_context || []).map((m) => `<p class="notice-banner">${escape(m)}</p>`).join("")}${q.answer.professional_review ? '<p class="case-meta">This question has been flagged for professional review.</p>' : ""}`}</article>`).join("")}`;
 }
 function reviewTab(c) {
   const role = state.me.orgs.find((o) => o.id === state.org)?.role;
@@ -235,7 +245,7 @@ function caseView() {
   const progress = c.pages.filter((p) =>
     ["done", "failed"].includes(p.status),
   ).length;
-  return `<button class="back" data-action="nav" data-view="home">← All notices</button><div class="case-heading"><div><div class="eyebrow">YOUR CASE WORKSPACE</div><h1>${escape(c.title)}</h1><span class="pill ${c.status === "review_required" ? "warn" : ""}">${escape(statuses[c.status] || c.status)}</span> <span class="case-meta">${escape(labels[c.category])} · ${c.page_count} pages · ${dateText(c.created)}</span></div><div class="case-controls"><button class="button secondary small" data-action="export">Export ↓</button><button class="text-btn" data-action="delete">Delete</button></div></div>${["queued", "extracting"].includes(c.status) ? `<div class="notice-banner green loading">Processing pages · ${progress} / ${c.page_count} complete<div class="progress"><span id="progress"></span></div></div>` : ""}${c.flags.length ? `<div class="notice-banner">${c.flags.map((f) => escape(flags[f] || f)).join(" · ")}</div>` : ""}<div class="workspace"><section class="card viewer" aria-label="Original notice"><div class="viewer-tools"><strong>Original document</strong><div><button data-action="prev-page" aria-label="Previous page">‹</button> &nbsp; <span id="page-label">${state.page} / ${c.page_count}</span> &nbsp; <button data-action="next-page" aria-label="Next page">›</button></div></div><div class="page-image-wrap" tabindex="0" aria-label="Document page image"><div class="page-image"><img id="page-image" alt="Notice page ${state.page}"><div id="overlay" class="overlay"></div></div></div><div class="page-caption" id="page-caption">Loading page...</div><details><summary class="page-caption">View extracted text</summary><pre class="ocr-text" id="page-text" tabindex="0" aria-label="Full extracted text"></pre></details></section><section class="card"><nav class="tabs" aria-label="Case sections">${[
+  return `<button class="back" data-action="nav" data-view="home">← All notices</button><div class="case-heading"><div><div class="eyebrow">YOUR CASE WORKSPACE</div><h1>${escape(c.title)}</h1><span class="pill ${c.status === "review_required" ? "warn" : ""}">${escape(statuses[c.status] || c.status)}</span> <span class="case-meta">${escape(labels[c.category])} · ${c.page_count} pages · ${dateText(c.created)}</span></div><div class="case-controls"><button class="button secondary small" data-action="export">Export ↓</button>${["owner", "admin"].includes(state.me.orgs.find(o => o.id === state.org)?.role) ? '<button class="button secondary small" data-action="reprocess">Reanalyze</button>' : ""}<button class="text-btn" data-action="delete">Delete</button></div></div>${["queued", "extracting"].includes(c.status) ? `<div class="notice-banner green loading">Processing pages · ${progress} / ${c.page_count} complete<div class="progress"><span id="progress"></span></div></div>` : ""}${c.flags.length ? `<div class="notice-banner">${c.flags.map((f) => escape(flags[f] || f)).join(" · ")}</div>` : ""}<div class="workspace"><section class="card viewer" aria-label="Original notice"><div class="viewer-tools"><strong>Original document</strong><div><button data-action="prev-page" aria-label="Previous page">‹</button> &nbsp; <span id="page-label">${state.page} / ${c.page_count}</span> &nbsp; <button data-action="next-page" aria-label="Next page">›</button></div></div><div class="page-image-wrap" tabindex="0" aria-label="Document page image"><div class="page-image"><img id="page-image" alt="Notice page ${state.page}"><div id="overlay" class="overlay"></div></div></div><div class="page-caption" id="page-caption">Loading page...</div><details><summary class="page-caption">View extracted text</summary><pre class="ocr-text" id="page-text" tabindex="0" aria-label="Full extracted text"></pre></details></section><section class="card"><nav class="tabs" aria-label="Case sections">${[
     ["facts", "Facts"],
     ["context", "Context"],
     ["actions", "Next steps"],
@@ -499,6 +509,11 @@ document.addEventListener("click", async (event) => {
         "An example, not an official notice",
         `<p class="sub">The example PDF contains a clear reply date and amount. Upload it to try the complete evidence and workspace flow.</p><a class="button" href="/assets/sample.pdf" download="example-notice.pdf">Download example PDF ↓</a><p class="privacy">This is a synthetic test document, not an official notice or legal advice.</p>`,
       );
+    if (action === "reprocess") {
+      await api(`/api/cases/${state.current.id}/reprocess`, { method: "POST" });
+      toast("Reanalysis started. Completed model chunks will be reused when possible.");
+      return await openCase(state.current.id);
+    }
     if (action === "export")
       return await download(
         `/api/cases/${state.current.id}/export`,
@@ -540,7 +555,7 @@ document.addEventListener("click", async (event) => {
     if (action === "help")
       return modal(
         "How to use Notice Clarity",
-        `<ol class="privacy"><li>Create an account and open the email verification link.</li><li>Upload a PDF or a clear photo. Unlock password-protected PDFs before uploading.</li><li>Select extracted facts and inspect their evidence on the original page. OCR indicators do not guarantee accurate extraction.</li><li>Add the receipt date and your context. Ask questions and create a task list.</li><li>Have any legal interpretation or response checked by your accountant or lawyer. Assign a verified professional the reviewer role.</li></ol>`,
+        `<ol class="privacy"><li>Create an account. If this server requires email verification, open the link sent to your email.</li><li>Upload a PDF or a clear photo. Unlock password-protected PDFs before uploading.</li><li>Select extracted facts and inspect their evidence on the original page. OCR indicators do not guarantee accurate extraction.</li><li>Add the receipt date and your context. Ask questions and create a task list.</li><li>Have any legal interpretation or response checked by your accountant or lawyer. Assign a verified professional the reviewer role.</li></ol>`,
       );
   } catch (error) {
     toast(error.message, true);
@@ -579,7 +594,10 @@ document.addEventListener("submit", async (event) => {
         method: "PATCH",
         body: data,
       });
-      toast("Context saved.");
+      toast("Context saved. The notice summary is being refreshed.");
+      state.current = await api(`/api/cases/${state.current.id}`);
+      render();
+      schedule();
     }
     if (form.id === "action-form") {
       await api(`/api/cases/${state.current.id}/actions`, {

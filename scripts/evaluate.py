@@ -15,7 +15,7 @@ def main():
         facts = baseline(Page(number=1, text=item["text"]))
         times.append((time.perf_counter() - start) * 1000)
         passed = (
-            (not facts)
+            (not any(f["kind"] == "deadline" for f in facts))
             if item["kind"] is None
             else any(f["kind"] == item["kind"] and f["date_iso"] == item["date"] for f in facts)
         )

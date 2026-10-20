@@ -57,7 +57,7 @@ test("English workspace: upload, evidence, context, question, export and deletio
     .fill("What amount is mentioned?");
   await page.getByRole("button", { name: "Ask ↗", exact: true }).click();
   await expect(
-    page.getByText("Related excerpts · no verified conclusion"),
+    page.getByText("Document facts · original evidence linked"),
   ).toBeVisible({ timeout: 30000 });
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export ↓" }).click();

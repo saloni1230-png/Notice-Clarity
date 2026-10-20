@@ -46,7 +46,7 @@ def test_complete_upload_pipeline_evidence_actions_and_question(client, uploaded
     final = client.get(f"/api/cases/{uploaded}").json()
     assert final["questions"][0]["status"] == "done"
     assert final["questions"][0]["answer"]["mode"] == "extracts"
-    assert final["questions"][0]["answer"]["professional_review"] is True
+    assert final["questions"][0]["answer"]["professional_review"] is False
     assert client.get(f"/api/cases/{uploaded}/export").headers["content-disposition"].startswith("attachment")
 
 

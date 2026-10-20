@@ -1,0 +1,15 @@
+{
+  "name": "notice-clarity-browser-tests",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "check": "node --check notice/web/app.js"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.58.0",
+    "prettier": "^3.9.10"
+  }
+}

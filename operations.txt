@@ -127,14 +127,24 @@ Workers emit job ID, pool, duration and outcome JSON without notice text.
 Digital extraction runs before OCR. Page content, facts and optional embeddings
 are cached by tenant/document SHA-256 and pipeline version; duplicate uploads reuse
 the document. Page PNG rendering is cached privately. No cross-tenant cache sharing.
-AI requests reserve conservative UTF-8-byte token upper bounds, explicit output
-limits, daily per-org USD/token budgets and per-org concurrency before network calls.
-Model timeout/no-valid-schema/no-evidence returns excerpts; no hidden retries within
-provider calls. Strong model is used for ambiguous extraction and support checks.
-Embedding storage is page-level JSON; bounded <=80-page case retrieval computes
-cosine on authorized pages. This is intentionally scoped per case, not a global
-million-document vector index. Cross-encoder reranking is optional and provisioned
-separately. Bump NS_PIPELINE_VERSION when extraction/embedding semantics change.
+AI requests use model token counts with a safety margin, explicit output limits,
+daily per-org USD/token budgets and per-org concurrency before network calls.
+Reported prompt/completion usage atomically settles the original reservation day.
+Unknown usage and timeouts keep the reservation. The gateway makes no hidden
+retries; durable workers retry transient failures within their bounded retry policy.
+Completed extraction and embedding chunks are stored with page/content/model/engine
+keys. Worker retries resume from these checkpoints; document erasure cascades them.
+Strong model calls are reserved for extraction ambiguity and support verification.
+No-valid-schema/no-evidence failures return labelled facts or an explicit missing
+evidence result. Use `notice-admin doctor` to distinguish configuration from queues.
+Embeddings are stored as versioned passage JSON with exact page offsets. Retrieval
+builds an authorized inverted BM25 index, optionally fuses embeddings and reranks
+bounded candidates. Worker index caches have tenant keys, content hashes, a five
+minute TTL, eight-document limit and two-million-character budget. This is per-case
+retrieval; a global million-document corpus would need a database search service.
+Bump NS_PIPELINE_VERSION when extraction/embedding semantics change. Reanalyze in
+the workspace restarts failed pages, reuses matching model chunks and creates fresh
+stage keys. Context refreshes use revision fencing and conditional answer updates.
 No latency/SLA/cost or extraction accuracy figures are invented or guaranteed.
 
 BACKUP AND RESTORE DRILL (ISOLATED ENVIRONMENT ONLY)

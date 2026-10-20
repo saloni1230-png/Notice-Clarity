@@ -1,0 +1,111 @@
+{
+  "product": "Notice Clarity",
+  "version": "1.1.0",
+  "verified_on": "2026-10-20",
+  "release_state": "Implemented and locally tested codebase; public production deployment not verified",
+  "delivery": "Updated modular Git repository; no Markdown files added",
+  "implemented": [
+    "English-only responsive frontend, onboarding, case workspace, document viewer and approximate word evidence highlights",
+    "PostgreSQL models, explicit Alembic migrations and schema-version readiness checks",
+    "Independent extract, OCR, AI, mail and maintenance durable workers with SKIP LOCKED, heartbeats, fencing, retries and dead letters",
+    "Typed page extraction, exact evidence verification, ambiguity flags, automatic sourced summary and stale-context/source labels",
+    "Context collection, quoted dates, action checklists, Q&A and institution-assigned professional reviewer workflow",
+    "Permission-filtered BM25; optional provider embeddings, reciprocal-rank fusion and optional local cross-encoder reranking",
+    "Structured model output, independent support verification and withheld risky interpretations with extractive fallback",
+    "Official-host source ingestion with snapshots, hashes, review approval, freshness and effective intervals",
+    "Argon2id auth, verification, recovery, session revocation, CSRF/origin protection, organization roles and audit events",
+    "Private local development storage or production S3/KMS adapter; image cache; ClamAV scanner adapter; retention and case deletion",
+    "Encrypted email outbox, per-organization model token/cost/concurrency budgets and tenant-scoped content-hash deduplication",
+    "Version-and-hash dependency locks, CI, Docker profiles, TLS proxy template, metrics, alert rules and operations runbooks",
+    "Exact offset passage retrieval across complete pages and approved source snapshots; bounded tenant-scoped inverted-index cache",
+    "Useful deterministic issuer/request/reference/amount/date extraction and focused factual answers without an AI provider",
+    "Durable per-chunk extraction and embedding checkpoints, transient retry classification, generation-fenced reanalysis and revision-fenced summary refresh",
+    "Tokenizer-based budgets, shared HTTP connection pools, atomic actual-usage settlement, bounded provider responses and finite indexed embedding validation",
+    "Contiguous quotation highlights, rotated-page coordinates, weighted OCR confidence and strict numeric/date evidence checks"
+  ],
+  "tested": {
+    "backend": {
+      "passed": 108,
+      "skipped": 1,
+      "database": "real PostgreSQL 17.10",
+      "python": "3.12.14",
+      "line_coverage_percent": 82.6,
+      "skip_reason": "Tesseract with eng is not provisioned on this Windows host",
+      "warning": "Starlette TestClient httpx deprecation warning",
+      "additional_regression": "Final failed-page fact exclusion passed after the complete suite"
+    },
+    "browser": {
+      "passed": 2,
+      "engine": "Playwright Chromium",
+      "scope": "desktop upload/evidence/context/actions/Q&A/export/delete; mobile help/sources/no horizontal overflow",
+      "accessibility": "No serious or critical axe violations in tested desktop Q&A and mobile source screens; not a full WCAG audit"
+    },
+    "synthetic_regressions": {
+      "passed": 10,
+      "scope": "deterministic English date extraction and ambiguity; not legal accuracy"
+    },
+    "database": {
+      "migrations_applied": true,
+      "model_drift": false
+    },
+    "dependency_audit": {
+      "scanner": "OSV exact runtime versions",
+      "runtime_packages": 52,
+      "known_advisories": 0,
+      "npm_known_vulnerabilities": 0,
+      "limitation": "Known advisory lookup at this date; not a penetration test or security certification"
+    },
+    "compose": {
+      "development_config_valid": true,
+      "production_config_valid": true,
+      "image_build_and_container_run_verified": false
+    },
+    "static_checks": [
+      "ruff check passed",
+      "JavaScript syntax passed",
+      "Alembic model drift check passed"
+    ],
+    "benchmark": {
+      "scope": "Synthetic in-process lexical passage index; excludes OCR, DB, models and HTTP",
+      "pages": 80,
+      "characters": 1460320,
+      "passages": 960,
+      "queries": 80,
+      "top1_exact_identifier_hits": 80,
+      "build_ms": 177.115,
+      "query_median_ms": 0.04,
+      "query_p95_ms": 0.049
+    }
+  },
+  "external_configuration_required": [
+    "Provision and verify Docker runtime or deployment platform, managed PostgreSQL with least-privilege roles and TLS",
+    "Provision private S3 bucket, KMS key and workload IAM; verify version retention and lifecycle erasure",
+    "Provision ClamAV, English Tesseract language data and isolated processing containers",
+    "Configure authenticated TLS SMTP and deliverability; development Mailpit is not production email",
+    "Configure tested structured-output AI models, real maximum prices and provider privacy/retention terms",
+    "Provision optional embedding model and cross-encoder package/weights before enabling them",
+    "Ingest official sources, obtain qualified review and approve versioned effective intervals",
+    "Configure HTTPS domain, ingress limits, secrets, telemetry, backups, privacy contact and retention policy"
+  ],
+  "pending_validation": [
+    "Docker build/run: sandbox cannot access the Docker Desktop Linux-engine named pipe",
+    "Real English OCR execution and representative noisy/multilingual scans",
+    "Live model generation, live embeddings and real cross-encoder reranking; provider contracts were mocked in tests",
+    "Live SMTP, S3/KMS and ClamAV integrations; adapters have local/contract checks only",
+    "Complete professionally reviewed Indian legal corpus and domain evaluation with actual redacted notices",
+    "Reviewer qualification/identity verification by the deploying institution",
+    "External penetration testing, abuse/soak/capacity testing and Linux CI execution",
+    "Encrypted object/backups restore, erasure-ledger replay, real RPO/RTO and incident response",
+    "Account erasure support process; case erasure is implemented, account-wide erasure is not automated"
+  ],
+  "scope_limits": {
+    "default_upload": "20 MB / 80 pages; PDFs, single PNG or JPEG; encrypted PDFs rejected",
+    "case_access": "All members of an organization can access its active cases; no per-case private sharing",
+    "summary": "Bounded fact ledger balanced by kind and distant pages plus relevant passages; supplied fact count and total are reported",
+    "no_ai": "Explicit quoted document facts and focused factual answers; not unrestricted semantic interpretation",
+    "sources": "Starter manifest is procedural portal discovery, not a complete approved legal corpus",
+    "legal": "Does not file replies, make payments, calculate limitation periods or certify legal advice",
+    "audit": "Application audit table, not immutable/tamper-proof against database administrators",
+    "performance": "No production latency, cost, accuracy or throughput SLA is claimed"
+  }
+}
